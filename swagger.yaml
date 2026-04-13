@@ -1,0 +1,233 @@
+openapi: 3.0.0
+info:
+  title: Movies API
+  description: API для курса JavaScript Mastery  проекта "Код Будущего" | 2026
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+paths:
+  /films:
+    get:
+      summary: Получить все фильмы
+      description: Возвращает список всех фильмов с постерами и описаниями
+      tags:
+        - Films
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Film'
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /top25:
+    get:
+      summary: Получить топ-25 фильмов
+      description: Возвращает 25 лучших фильмов, отсортированных по рейтингу
+      tags:
+        - Films
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Film'
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /films/{id}:
+    get:
+      summary: Получить фильм по ID
+      description: Возвращает详细信息 о фильме, включая жанры и актеров
+      tags:
+        - Films
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID фильма
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilmDetails'
+        '404':
+          description: Фильм не найден
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /actors:
+    get:
+      summary: Получить всех актеров
+      description: Возвращает список всех актеров
+      tags:
+        - Actors
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Actor'
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /actors/{id}:
+    get:
+      summary: Получить актера по ID
+      description: Возвращает详细信息 об актере, включая список фильмов
+      tags:
+        - Actors
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID актера
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActorDetails'
+        '404':
+          description: Актер не найден
+        '500':
+          description: Внутренняя ошибка сервера
+
+components:
+  schemas:
+    Film:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID фильма
+          example: 1
+        title:
+          type: string
+          description: Название фильма
+          example: "Побег из Шоушенка"
+        year:
+          type: integer
+          description: Год выпуска
+          example: 1994
+        rating:
+          type: number
+          format: float
+          description: Рейтинг фильма
+          example: 9.3
+        poster_URL:
+          type: string
+          description: URL постера фильма
+          example: "/images/posters/shawshank.jpg"
+        desc:
+          type: string
+          description: Описание фильма
+          example: "Два заключенных находят дружбу и искупление..."
+      required:
+        - id
+        - title
+
+    FilmDetails:
+      allOf:
+        - $ref: '#/components/schemas/Film'
+        - type: object
+          properties:
+            genres:
+              type: array
+              description: Список жанров фильма
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: "Драма"
+            actors:
+              type: array
+              description: Список актеров фильма
+              items:
+                $ref: '#/components/schemas/Actor'
+
+    Actor:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID актера
+          example: 1
+        surname:
+          type: string
+          description: Фамилия актера
+          example: "Фримен"
+        name:
+          type: string
+          description: Имя актера
+          example: "Морган"
+        image_URL:
+          type: string
+          description: URL фото актера
+          example: "/images/actors/freeman.jpg"
+      required:
+        - id
+        - name
+        - surname
+
+    ActorDetails:
+      type: object
+      properties:
+        surname:
+          type: string
+          description: Фамилия актера
+          example: "Фримен"
+        name:
+          type: string
+          description: Имя актера
+          example: "Морган"
+        age:
+          type: integer
+          description: Возраст актера
+          example: 86
+        Biography:
+          type: string
+          description: Биография актера
+          example: "Американский актер и продюсер..."
+        image_URL:
+          type: string
+          description: URL фото актера
+          example: "/images/actors/freeman.jpg"
+        films:
+          type: array
+          description: Список фильмов с участием актера
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+                example: "Побег из Шоушенка"
+
+  tags:
+    - name: Films
+      description: Операции с фильмами
+    - name: Actors
+      description: Операции с актерами
