@@ -345,7 +345,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT токен для авторизации (формат: Bearer <token>)
+      description: JWT токен для авторизации (формат Bearer <token>)
 
   schemas:
     User:
