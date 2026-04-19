@@ -1,14 +1,238 @@
 openapi: 3.0.0
 info:
   title: Movies API
-  description: Movies API
-  version: 1.0.0
+  description: API для управления фильмами, актерами, пользователями и избранным
+  version: 2.0.5
 
 servers:
   - url: http://127.0.0.1:7757
     description: Test Server
 
 paths:
+  /register:
+    post:
+      summary: Регистрация нового пользователя
+      description: Создает нового пользователя и возвращает токены доступа
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - username
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Email пользователя
+                  example: "user@example.com"
+                password:
+                  type: string
+                  minLength: 6
+                  description: Пароль (минимум 6 символов)
+                  example: "password123"
+                username:
+                  type: string
+                  description: Имя пользователя
+                  example: "JohnDoe"
+      responses:
+        '201':
+          description: Регистрация успешна
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Ошибка валидации или пользователь уже существует
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /login:
+    post:
+      summary: Вход в систему
+      description: Аутентифицирует пользователя и возвращает токены доступа
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                password:
+                  type: string
+                  example: "password123"
+      responses:
+        '200':
+          description: Вход выполнен успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Неверный email или пароль
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /refresh-token:
+    post:
+      summary: Обновление access токена
+      description: Получает новый access токен по refresh токену
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+                  description: Refresh токен
+      responses:
+        '200':
+          description: Новый access токен успешно сгенерирован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+        '401':
+          description: Refresh token не предоставлен
+        '403':
+          description: Недействительный или истекший refresh token
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /logout:
+    post:
+      summary: Выход из системы
+      description: Удаляет refresh токен из базы данных
+      tags:
+        - Auth
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Выход выполнен успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Выход выполнен успешно"
+
+  /favorites:
+    get:
+      summary: Получить избранные фильмы пользователя
+      description: Возвращает список фильмов, добавленных пользователем в избранное
+      tags:
+        - Favorites
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Film'
+        '401':
+          description: Токен не предоставлен или недействителен
+        '500':
+          description: Внутренняя ошибка сервера
+    
+    post:
+      summary: Добавить фильм в избранное
+      description: Добавляет фильм в список избранного пользователя
+      tags:
+        - Favorites
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - film_id
+              properties:
+                film_id:
+                  type: integer
+                  example: 1
+      responses:
+        '201':
+          description: Фильм добавлен в избранное
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Фильм добавлен"
+        '401':
+          description: Токен не предоставлен или недействителен
+        '500':
+          description: Внутренняя ошибка сервера
+    
+    delete:
+      summary: Удалить фильм из избранного
+      description: Удаляет фильм из списка избранного пользователя
+      tags:
+        - Favorites
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - film_id
+              properties:
+                film_id:
+                  type: integer
+                  example: 1
+      responses:
+        '204':
+          description: Фильм удален из избранного
+        '401':
+          description: Токен не предоставлен или недействителен
+        '500':
+          description: Внутренняя ошибка сервера
+
   /films:
     get:
       summary: Получить все фильмы
@@ -116,7 +340,47 @@ paths:
           description: Внутренняя ошибка сервера
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT токен для авторизации (формат: Bearer <token>)
+
   schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID пользователя
+        email:
+          type: string
+          format: email
+          description: Email пользователя
+        username:
+          type: string
+          description: Имя пользователя
+        role:
+          type: string
+          description: Роль пользователя
+          example: "user"
+
+    AuthResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Регистрация успешна"
+        accessToken:
+          type: string
+          description: JWT access token (действителен 15 минут)
+        refreshToken:
+          type: string
+          description: JWT refresh token (действителен 7 дней)
+        user:
+          $ref: '#/components/schemas/User'
+
     Film:
       type: object
       properties:
@@ -167,7 +431,14 @@ components:
               type: array
               description: Список актеров фильма
               items:
-                $ref: '#/components/schemas/Actor'
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  surname:
+                    type: string
 
     Actor:
       type: object
@@ -227,7 +498,11 @@ components:
                 example: "Побег из Шоушенка"
 
   tags:
+    - name: Auth
+      description: Операции аутентификации и авторизации
     - name: Films
       description: Операции с фильмами
     - name: Actors
       description: Операции с актерами
+    - name: Favorites
+      description: Операции с избранными фильмами
