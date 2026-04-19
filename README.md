@@ -57,7 +57,7 @@ npm install
    Создайте файл `.env` в корне проекта:
 ```env
 PORT=7757
-DATABASE_NAME=movies.db
+DATABASE_NAME=Film.db
 JWT_ACCESS_SECRET=your-secret-access-key
 JWT_REFRESH_SECRET=your-secret-refresh-key
 ```
