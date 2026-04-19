@@ -175,10 +175,122 @@ export class Actors {
         })
     }
 
+}
 
 
 
 
+export class Token {
+    static deleteTokenByUserId(userId) {
+        const database = new sqlite3.Database(DATABASE_NAME)
+        database.run('DELETE FROM refresh_tokens WHERE user_id = ?', [userId]);
+        database.close()
+    }
+
+    static deleteToken(token) {
+        const database = new sqlite3.Database(DATABASE_NAME)
+        database.run('DELETE FROM refresh_tokens WHERE token = ?', [token]);
+        database.close()
+    }
+
+
+    static saveToken(userId, refreshToken, expiresAt) {
+        const database = new sqlite3.Database(DATABASE_NAME)
+        database.run(
+            'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
+            [userId, refreshToken, expiresAt.toISOString()]
+        );
+        database.close()
+    }
+
+
+    static getToken(token) {
+        const database = new sqlite3.Database(DATABASE_NAME)
+        return new Promise((resolve, reject) => {
+            database.all(
+                `SELECT user_id, expires_at FROM refresh_tokens WHERE token = ?
+                `,
+                [token],
+                (err, result) => {
+                    database.close()
+                    if (err) reject(err)
+                    else resolve(result)
+                }
+            )
+        })
+    }
+}
+
+
+
+
+
+
+export class User {
+    static getUserByEmail(email) {
+        const database = new sqlite3.Database(DATABASE_NAME)
+        return new Promise((resolve, reject) => {
+            database.all(
+                'SELECT * FROM users WHERE email = ?',
+                [email],
+                (err, result) => {
+                    database.close()
+                    if (err) reject(err)
+                    else resolve(result)
+                }
+            )
+        })
+    }
+
+    static create(email, hashedPassword, name) {
+        const database = new sqlite3.Database(DATABASE_NAME)
+        return new Promise((resolve, reject) => {
+            database.run(
+                'INSERT INTO users (email, password, username) VALUES (?, ?, ?)',
+                [email, hashedPassword, name],
+                (err, result) => {
+                    database.close()
+                    if (err) reject(err)
+                    else resolve(result)
+                }
+            )
+        })
+    }
+
+}
+
+
+export class Favorite {
+    static getFavoritesById(userId) {
+        const database = new sqlite3.Database(DATABASE_NAME)
+        return new Promise((resolve, reject) => {
+            database.all(
+                `SELECT f.*
+                FROM Film as f
+                INNER JOIN favorites as fav ON fav.film_id = f.id
+                WHERE fav.user_id = ?;`,
+                [userId],
+                (err, result) => {
+                    database.close()
+                    if (err) reject(err)
+                    else resolve(result)
+                }
+            )
+        })
+    }
+
+
+    static saveFavoriteFilm(userId, filmId) {
+        const database = new sqlite3.Database(DATABASE_NAME)
+        database.run("INSERT INTO favorites (user_id, film_id) VALUES (?, ?)", [userId, filmId])
+        database.close()
+    }
+
+    static deleteFavoriteFilm(userId, filmId) {
+        const database = new sqlite3.Database(DATABASE_NAME)
+        database.run("DELETE FROM favorites WHERE userId = ? AND filmId = ?;", [userId, filmId])
+        database.close()
+    }
 
 
 }
